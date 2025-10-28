@@ -1,162 +1,241 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const ModalPesanRuang = ({ onClose, onSuccess }) => {
-  const [form, setForm] = useState({
-    unit: "",
-    room: "",
-    capacity: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-  });
-
+const PesanRuang = () => {
+  const navigate = useNavigate();
   const [units, setUnits] = useState([]);
   const [rooms, setRooms] = useState([]);
 
-  // 🔹 Ambil data unit dan ruangan
+  const [formData, setFormData] = useState({
+    unit: "",
+    ruangMeeting: "",
+    kapasitas: "",
+    tanggalRapat: "",
+    waktuMulai: "",
+    waktuSelesai: "",
+    jumlahPeserta: "",
+    jenisKonsumsi: [],
+    nominalKonsumsi: "",
+  });
+
+  // 🔹 Ambil data dari API
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [unitRes, roomRes] = await Promise.all([
           axios.get("http://localhost:5000/api/units"),
-          axios.get("http://localhost:5000/api/rooms"), // ✅ updated endpoint
+          axios.get("http://localhost:5000/api/rooms"),
         ]);
+
         setUnits(unitRes.data);
         setRooms(roomRes.data);
       } catch (error) {
-        console.error("Gagal memuat data:", error);
+        console.error("❌ Gagal memuat data:", error);
       }
     };
 
     fetchData();
   }, []);
 
-  // 🔹 Ketika ruangan dipilih, otomatis isi kapasitas
-  const handleRoomChange = (e) => {
-    const selectedRoomName = e.target.value;
-    const selectedRoom = rooms.find((r) => r.name === selectedRoomName);
+  // 🔹 Handle perubahan input
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
 
-    setForm({
-      ...form,
-      room: selectedRoomName,
-      capacity: selectedRoom ? selectedRoom.capacity : "",
-    });
+    if (type === "checkbox") {
+      setFormData((prev) => {
+        const updated = checked
+          ? [...prev.jenisKonsumsi, value]
+          : prev.jenisKonsumsi.filter((v) => v !== value);
+        return { ...prev, jenisKonsumsi: updated };
+      });
+    } else if (name === "ruangMeeting") {
+      // 🔸 Ambil kapasitas dari ruangan yang dipilih
+      const selectedRoom = rooms.find((r) => r.ruangMeeting === value);
+      setFormData((prev) => ({
+        ...prev,
+        ruangMeeting: value,
+        kapasitas: selectedRoom ? selectedRoom.kapasitas : "",
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
+  // 🔹 Submit data ke backend
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:5000/api/meetings", form);
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error("Gagal menyimpan data:", error);
+      await axios.post("http://localhost:5000/api/meetings", formData);
+      alert("✅ Ruangan berhasil dipesan!");
+      navigate("/ruang-meeting");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Gagal menyimpan data!");
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-xl shadow-lg w-[400px]">
-        <h2 className="text-lg font-semibold mb-4">Pesan Ruang Meeting</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow p-8">
+        <div className="text-sm text-gray-500 mb-6">
+          Ruang Meeting &gt;{" "}
+          <span className="text-blue-600 font-medium">Pesan Ruangan</span>
+        </div>
 
-          {/* Unit */}
-          <div>
-            <label className="block text-sm font-medium">Unit</label>
-            <select
-              value={form.unit}
-              onChange={(e) => setForm({ ...form, unit: e.target.value })}
-              className="w-full border rounded-md px-2 py-1"
-              required
-            >
-              <option value="">Pilih Unit</option>
-              {units.map((u) => (
-                <option key={u._id} value={u.name}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
+        <h2 className="text-xl font-semibold mb-6">Informasi Ruang Meeting</h2>
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Unit */}
+            <div>
+              <label className="block text-gray-700 mb-1">Unit</label>
+              <select
+                name="unit"
+                value={formData.unit}
+                onChange={handleChange}
+                className="w-full border rounded-lg p-2"
+                required
+              >
+                <option value="">Pilih Unit</option>
+                {units.map((u) => (
+                  <option key={u._id} value={u.name}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Ruang Meeting */}
+            <div>
+              <label className="block text-gray-700 mb-1">Ruang Meeting</label>
+              <select
+                name="ruangMeeting"
+                value={formData.ruangMeeting}
+                onChange={handleChange}
+                className="w-full border rounded-lg p-2"
+                required
+              >
+                <option value="">Pilih Ruangan</option>
+                {rooms.map((r) => (
+                  <option key={r._id} value={r.ruangMeeting}>
+                    {r.ruangMeeting}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Ruang Meeting */}
+          {/* Kapasitas otomatis dari API */}
           <div>
-            <label className="block text-sm font-medium">Ruang Meeting</label>
-            <select
-              value={form.room}
-              onChange={handleRoomChange}
-              className="w-full border rounded-md px-2 py-1"
-              required
-            >
-              <option value="">Pilih Ruangan</option>
-              {rooms.map((r) => (
-                <option key={r._id} value={r.name}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Kapasitas (otomatis) */}
-          <div>
-            <label className="block text-sm font-medium">Kapasitas</label>
+            <label className="block text-gray-700 mb-1">Kapasitas</label>
             <input
               type="text"
-              value={form.capacity}
-              readOnly
-              className="w-full border rounded-md px-2 py-1 bg-gray-100"
+              name="kapasitas"
+              value={formData.kapasitas}
+              onChange={handleChange}
               placeholder="Kapasitas otomatis terisi"
+              className="w-full border rounded-lg p-2 bg-gray-100"
+              readOnly
             />
           </div>
 
-          {/* Tanggal */}
+          <hr className="my-6" />
+          <h2 className="text-xl font-semibold mb-4">Informasi Rapat</h2>
+
+          {/* Tanggal & Waktu */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-gray-700 mb-1">Tanggal Rapat</label>
+              <input
+                type="date"
+                name="tanggalRapat"
+                value={formData.tanggalRapat}
+                onChange={handleChange}
+                className="w-full border rounded-lg p-2"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-gray-700 mb-1">Waktu Mulai</label>
+              <input
+                type="time"
+                name="waktuMulai"
+                value={formData.waktuMulai}
+                onChange={handleChange}
+                className="w-full border rounded-lg p-2"
+              />
+            </div>
+
+            <div>
+              <label className="block text-gray-700 mb-1">Waktu Selesai</label>
+              <input
+                type="time"
+                name="waktuSelesai"
+                value={formData.waktuSelesai}
+                onChange={handleChange}
+                className="w-full border rounded-lg p-2"
+              />
+            </div>
+          </div>
+
+          {/* Jumlah Peserta */}
           <div>
-            <label className="block text-sm font-medium">Tanggal</label>
+            <label className="block text-gray-700 mb-1">Jumlah Peserta</label>
             <input
-              type="date"
-              value={form.date}
-              onChange={(e) => setForm({ ...form, date: e.target.value })}
-              className="w-full border rounded-md px-2 py-1"
-              required
+              type="number"
+              name="jumlahPeserta"
+              value={formData.jumlahPeserta}
+              onChange={handleChange}
+              placeholder="Masukkan jumlah peserta"
+              className="w-full border rounded-lg p-2"
             />
           </div>
 
-          {/* Waktu Mulai */}
+          {/* Jenis Konsumsi */}
           <div>
-            <label className="block text-sm font-medium">Waktu Mulai</label>
-            <input
-              type="time"
-              value={form.startTime}
-              onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-              className="w-full border rounded-md px-2 py-1"
-              required
-            />
+            <label className="block text-gray-700 mb-1">Jenis Konsumsi</label>
+            <div className="flex gap-4">
+              {["Snack Siang", "Makan Siang", "Snack Sore"].map((item) => (
+                <label key={item} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    value={item}
+                    checked={formData.jenisKonsumsi.includes(item)}
+                    onChange={handleChange}
+                  />
+                  {item}
+                </label>
+              ))}
+            </div>
           </div>
 
-          {/* Waktu Selesai */}
+          {/* Nominal Konsumsi */}
           <div>
-            <label className="block text-sm font-medium">Waktu Selesai</label>
+            <label className="block text-gray-700 mb-1">Nominal Konsumsi</label>
             <input
-              type="time"
-              value={form.endTime}
-              onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-              className="w-full border rounded-md px-2 py-1"
-              required
+              type="number"
+              name="nominalKonsumsi"
+              value={formData.nominalKonsumsi}
+              onChange={handleChange}
+              placeholder="Rp"
+              className="w-full border rounded-lg p-2"
             />
           </div>
 
-          {/* Tombol */}
-          <div className="flex justify-end gap-2 pt-3">
+          {/* Tombol Aksi */}
+          <div className="flex justify-end gap-4 pt-6">
             <button
               type="button"
-              onClick={onClose}
-              className="px-3 py-2 rounded-lg border"
+              onClick={() => navigate("/ruang-meeting")}
+              className="px-6 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              className="px-6 py-2 bg-teal-700 hover:bg-teal-800 rounded-lg text-white"
             >
               Simpan
             </button>
@@ -167,4 +246,4 @@ const ModalPesanRuang = ({ onClose, onSuccess }) => {
   );
 };
 
-export default ModalPesanRuang;
+export default PesanRuang;

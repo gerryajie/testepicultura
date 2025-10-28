@@ -10,7 +10,7 @@ export const getUnits = async () => {
 
 // ✅ Get daftar ruang meeting (get-room)
 export const getRooms = async () => {
-  const res = await axios.get(`${API_BASE}/get-room`);
+  const res = await axios.get(`${API_BASE}/rooms`);
   return res.data;
 };
 

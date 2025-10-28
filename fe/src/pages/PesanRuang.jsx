@@ -4,8 +4,11 @@ import axios from "axios";
 
 const PesanRuang = () => {
   const navigate = useNavigate();
+
   const [units, setUnits] = useState([]);
+  const [rooms, setRooms] = useState([]);
   const [loadingUnits, setLoadingUnits] = useState(true);
+  const [loadingRooms, setLoadingRooms] = useState(true);
 
   const [formData, setFormData] = useState({
     unit: "",
@@ -19,25 +22,31 @@ const PesanRuang = () => {
     nominalKonsumsi: "",
   });
 
-  // 🔹 Ambil data unit dari backend
+  // 🔹 Ambil data unit & room dari backend
   useEffect(() => {
-    const fetchUnits = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/units");
-        setUnits(res.data);
+        const [unitRes, roomRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/units"),
+          axios.get("http://localhost:5000/api/rooms"),
+        ]);
+        setUnits(unitRes.data);
+        setRooms(roomRes.data);
       } catch (err) {
-        console.error("❌ Gagal memuat data unit:", err);
-        alert("Gagal memuat data unit dari server!");
+        console.error("❌ Gagal memuat data:", err);
+        alert("Gagal memuat data dari server!");
       } finally {
         setLoadingUnits(false);
+        setLoadingRooms(false);
       }
     };
-    fetchUnits();
+    fetchData();
   }, []);
 
   // 🔹 Handle perubahan input
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     if (type === "checkbox") {
       setFormData((prev) => {
         const updated = checked
@@ -45,12 +54,20 @@ const PesanRuang = () => {
           : prev.jenisKonsumsi.filter((v) => v !== value);
         return { ...prev, jenisKonsumsi: updated };
       });
+    } else if (name === "ruangMeeting") {
+      // 🔸 Ambil kapasitas berdasarkan pilihan ruang dari API rooms
+      const selectedRoom = rooms.find((r) => r.ruang === value);
+      setFormData((prev) => ({
+        ...prev,
+        ruangMeeting: value,
+        kapasitas: selectedRoom ? selectedRoom.kapasitas : "",
+      }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  // 🔹 Submit data ke backend
+  // 🔹 Submit ke backend
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -58,7 +75,7 @@ const PesanRuang = () => {
       alert("✅ Ruangan berhasil dipesan!");
       navigate("/ruang-meeting");
     } catch (err) {
-      console.error(err);
+      console.error("❌ Gagal menyimpan:", err);
       alert("❌ Gagal menyimpan data!");
     }
   };
@@ -76,8 +93,9 @@ const PesanRuang = () => {
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* 🔹 Bagian Pilihan Unit & Ruang */}
+          {/* 🔹 Pilihan Unit & Ruang Meeting */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Unit */}
             <div>
               <label className="block text-gray-700 mb-1">Unit</label>
               <select
@@ -99,6 +117,7 @@ const PesanRuang = () => {
               </select>
             </div>
 
+            {/* Ruang Meeting */}
             <div>
               <label className="block text-gray-700 mb-1">Ruang Meeting</label>
               <select
@@ -108,22 +127,27 @@ const PesanRuang = () => {
                 className="w-full border rounded-lg p-2"
                 required
               >
-                <option value="">Pilih Ruangan</option>
-                <option value="Ruang Prambanan">Ruang Prambanan</option>
-                <option value="Ruang Borobudur">Ruang Borobudur</option>
+                <option value="">
+                  {loadingRooms ? "Memuat data ruangan..." : "Pilih Ruangan"}
+                </option>
+                {!loadingRooms &&
+                  rooms.map((room) => (
+                    <option key={room._id} value={room.ruang}>
+                      {room.ruang}
+                    </option>
+                  ))}
               </select>
             </div>
           </div>
 
-          {/* 🔹 Kapasitas */}
+          {/* 🔹 Kapasitas otomatis dari API */}
           <div>
             <label className="block text-gray-700 mb-1">Kapasitas</label>
             <input
               type="text"
               name="kapasitas"
               value={formData.kapasitas}
-              onChange={handleChange}
-              placeholder="Kapasitas Ruangan"
+              placeholder="Kapasitas otomatis dari API"
               className="w-full border rounded-lg p-2 bg-gray-100"
               readOnly
             />
@@ -145,7 +169,6 @@ const PesanRuang = () => {
                 required
               />
             </div>
-
             <div>
               <label className="block text-gray-700 mb-1">Waktu Mulai</label>
               <input
@@ -156,7 +179,6 @@ const PesanRuang = () => {
                 className="w-full border rounded-lg p-2"
               />
             </div>
-
             <div>
               <label className="block text-gray-700 mb-1">Waktu Selesai</label>
               <input
