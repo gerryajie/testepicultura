@@ -1,4 +1,4 @@
-# 🚀 SCMT Notification System
+# 🚀 MEETING EPICULTURA
 
 Sistem notifikasi real-time berbasis **Express.js**, **MongoDB**, dan **React.js + TailwindCSS**.  
 Proyek ini terdiri dari dua bagian utama:
@@ -12,13 +12,13 @@ Proyek ini terdiri dari dua bagian utama:
 ### 🔹 Backend
 - Node.js + Express.js
 - MongoDB (Mongoose ODM)
-- Socket.io (Real-time notification)
+
 
 ### 🔹 Frontend
 - React.js (Vite)
 - TailwindCSS
 - Axios
-- Socket.io-client
+
 
 ---
 
@@ -61,6 +61,12 @@ Buat file .env di folder backend dengan isi seperti berikut:
 MONGO_URI=mongodb+srv://gerryajie:hr2zo2iExqIZjcFf@cluster0.zaybzev.mongodb.net
 PORT=5000
 
+
+| Key         | Deskripsi                   | Contoh Nilai                                                            |
+| ----------- | --------------------------- | ----------------------------------------------------------------------- |
+| `MONGO_URI` | Koneksi ke database MongoDB | `mongodb+srv://gerryajie:hr2zo2iExqIZjcFf@cluster0.zaybzev.mongodb.net` |
+| `PORT`      | Port server backend         | `5000`                                                                  |
+
 Lalu jalankan:
 npm run dev
 
@@ -76,16 +82,8 @@ Backend:  http://localhost:5000
 
 Dokumentasi lengkap API backend tersedia di Postman melalui link berikut:
 
-👉 Postman Collection - SCMT Notification
-
-| Key         | Deskripsi                   | Contoh Nilai                                                            |
-| ----------- | --------------------------- | ----------------------------------------------------------------------- |
-| `MONGO_URI` | Koneksi ke database MongoDB | `mongodb+srv://gerryajie:hr2zo2iExqIZjcFf@cluster0.zaybzev.mongodb.net` |
-| `PORT`      | Port server backend         | `5000`                                                                  |
-
 
 http://localhost:5000/api/meetings GET/ get meeting
-
 
 http://localhost:5000/api/meetings POST / post meeting
 
