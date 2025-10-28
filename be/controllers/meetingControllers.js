@@ -2,13 +2,27 @@ import Meeting from "../models/meetingModels.js";
 
 export const getMeetings = async (req, res) => {
   try {
-    const data = await Meeting.find();
-    res.json(data);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const totalMeetings = await Meeting.countDocuments();
+    const meetings = await Meeting.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      data: meetings,
+      currentPage: page,
+      totalPages: Math.ceil(totalMeetings / limit),
+      totalItems: totalMeetings,
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("❌ Error fetching meetings:", err);
+    res.status(500).json({ message: "Server Error" });
   }
 };
-
 export const createMeeting = async (req, res) => {
   try {
     const meeting = new Meeting(req.body);

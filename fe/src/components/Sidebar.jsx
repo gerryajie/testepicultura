@@ -1,13 +1,21 @@
-import { Home, ChevronLeft } from "lucide-react";
+import React from "react";
+import { Home, User } from "lucide-react";
 
 const Sidebar = () => {
   return (
-    <div className="w-16 h-screen bg-white border-r flex flex-col items-center py-6">
-      <Home className="text-primary w-6 h-6 mb-6" />
-      <button className="bg-gray-100 p-2 rounded-lg hover:bg-gray-200">
-        <ChevronLeft className="text-gray-700 w-4 h-4" />
+    <aside
+      className="fixed top-14 left-0 w-16 bg-white shadow-sm flex flex-col items-center py-6 space-y-6 border-r border-gray-200 z-40"
+    >
+      {/* 🔹 Home Button */}
+      <button className="w-10 h-10 flex items-center justify-center bg-teal-700 text-white rounded-lg hover:bg-teal-800 transition">
+        <Home size={20} />
       </button>
-    </div>
+
+      {/* 🔹 User Button */}
+      <button className="w-10 h-10 flex items-center justify-center text-teal-700 hover:bg-gray-100 rounded-lg transition">
+        <User size={20} />
+      </button>
+    </aside>
   );
 };
 
